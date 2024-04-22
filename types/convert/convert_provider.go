@@ -15,15 +15,15 @@ type Extension string
 func (f OutputFormat) GetExtension() Extension {
 	switch f {
 	case YAML:
-		return "yaml"
+		return ".yaml"
 	case XML:
-		return "xml"
+		return ".xml"
 	case TS:
-		return "ts"
+		return ".ts"
 	case GO:
-		return "go"
+		return ".go"
 	case RS:
-		return "rs"
+		return ".rs"
 	default:
 		return ""
 	}

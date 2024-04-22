@@ -31,7 +31,7 @@ func (c *YAMLConverter) Convert() error {
 		return err
 	}
 
-	fo, err := os.Create(fmt.Sprintf("output.%s", string(convert.YAML.GetExtension())))
+	fo, err := os.Create(fmt.Sprintf("output%s", string(convert.YAML.GetExtension())))
 	if err != nil {
 		return err
 	}

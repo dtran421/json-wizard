@@ -94,6 +94,10 @@ func (cmdStruct ConvertCmd) ValidateFlags() error {
 		return err
 	}
 
+	if err := cmdStruct.ValidateOutputFile(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -132,6 +136,19 @@ func (cmdStruct ConvertCmd) ValidateInputFile() error {
 	return nil
 }
 
+func (cmdStruct ConvertCmd) ValidateOutputFile() error {
+	if cmdStruct.outputFile == "" {
+		return nil
+	}
+
+	var outputFormatExtension = cmdStruct.outputFormat.GetExtension()
+	if extension := filepath.Ext(cmdStruct.outputFile); extension != string(outputFormatExtension) {
+		return fmt.Errorf("output file must have the extension %s, got %s", outputFormatExtension, extension)
+	}
+
+	return nil
+}
+
 func (cmdStruct ConvertCmd) ConvertJSON() error {
 	fmt.Printf("Converting %s to %s\n", cmdStruct.input, cmdStruct.outputFormat)
 
@@ -153,6 +170,8 @@ func (cmdStruct ConvertCmd) ConvertJSON() error {
 		fmt.Println("Converting to Go struct")
 	case convert.RS:
 		fmt.Println("Converting to Rust struct")
+	default:
+		return fmt.Errorf("invalid output format specified: %s", cmdStruct.outputFormat)
 	}
 
 	return nil

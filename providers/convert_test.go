@@ -138,11 +138,51 @@ func TestValidateInputFile_Error(t *testing.T) {
 	}
 }
 
+func TestValidateOutputFile_HappyPath(t *testing.T) {
+	setupTest()
+
+	cmd.SetOutputFormat(convert.YAML)
+	cmd.SetOutputFile("output.yaml")
+
+	if err := cmd.ValidateOutputFile(); err != nil {
+		t.Errorf("ValidateOutputFile() == %v, want nil", err)
+	}
+}
+
+func TestValidateOutputFile_Ignored(t *testing.T) {
+	setupTest()
+
+	cmd.SetOutputFile("")
+
+	if err := cmd.ValidateOutputFile(); err != nil {
+		t.Errorf("ValidateOutputFile() == %v, want nil", err)
+	}
+}
+
+func TestValidateOutputFile_Error(t *testing.T) {
+	setupTest()
+
+	cmd.SetOutputFormat(convert.YAML)
+
+	cmd.SetOutputFile("output")
+
+	if err := cmd.ValidateOutputFile(); err == nil {
+		t.Errorf("ValidateOutputFile() == nil, want error")
+	}
+
+	cmd.SetOutputFile("output.txt")
+
+	if err := cmd.ValidateOutputFile(); err == nil {
+		t.Errorf("ValidateOutputFile() == nil, want error")
+	}
+}
+
 func TestValidateFlags_HappyPath(t *testing.T) {
 	setupTest()
 
 	cmd.SetRawOutputFormat("yaml")
 	cmd.SetInputFile("../test/input.json")
+	cmd.SetOutputFile("output.yaml")
 
 	if err := cmd.ValidateFlags(); err != nil {
 		t.Errorf("ValidateFlags() == %v, want nil", err)
@@ -161,6 +201,14 @@ func TestValidateFlags_Error(t *testing.T) {
 
 	cmd.SetRawOutputFormat("yaml")
 	cmd.SetInputFile("invalid.json")
+
+	if err := cmd.ValidateFlags(); err == nil {
+		t.Errorf("ValidateFlags() == nil, want error")
+	}
+
+	cmd.SetRawOutputFormat("yaml")
+	cmd.SetInputFile("../test/input.json")
+	cmd.SetOutputFile("output")
 
 	if err := cmd.ValidateFlags(); err == nil {
 		t.Errorf("ValidateFlags() == nil, want error")
@@ -214,5 +262,28 @@ func TestValidateFn_Error(t *testing.T) {
 	if err := cmd.ValidateFn(nil, args); err == nil {
 		fmt.Printf("%v\n", err)
 		t.Errorf("ValidateFn() == nil, want error")
+	}
+}
+
+func TestConvertJSON_toYAML_HappyPath(t *testing.T) {
+	setupTest()
+
+	cmd.SetOutputFormat(convert.YAML)
+	cmd.SetInput([]byte(`{"key": "value"}`))
+	cmd.SetOutputFile("../test/output/output.yaml")
+
+	if err := cmd.ConvertJSON(); err != nil {
+		t.Errorf("ConvertJSON() == %v, want nil", err)
+	}
+}
+
+func TestConvertJSON9_Error(t *testing.T) {
+	setupTest()
+
+	cmd.SetInput([]byte(`{"key": [}}`))
+	cmd.SetOutputFile("../test/output/output.yaml")
+
+	if err := cmd.ConvertJSON(); err == nil {
+		t.Errorf("ConvertJSON() == nil, want error")
 	}
 }

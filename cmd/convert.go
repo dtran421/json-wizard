@@ -50,6 +50,7 @@ func init() {
 	// is called directly, e.g.:
 	var rawOutputFormat string
 	var inputFile string
+	var outputFile string
 
 	convertCmd.Flags().StringVarP(&rawOutputFormat, "outputFormat", "o", "",
 		"output format (required, one of: yaml, xml, ts, go, rs)")
@@ -61,4 +62,9 @@ func init() {
 		"input file to convert (will ignore if input is provided)")
 
 	cmdStruct.SetInputFile(inputFile)
+
+	convertCmd.Flags().StringVarP(&outputFile, "outputFile", "f", "",
+		"output file to write the converted JSON")
+
+	cmdStruct.SetOutputFile(outputFile)
 }
