@@ -11,39 +11,39 @@ import (
 	"github.com/dtran421/json-wizard/utils"
 )
 
-type YAMLConverter struct {
-	input      json.RawMessage
+type XMLConverter struct {
+	input json.RawMessage
+
 	inputFile  types.Filepath
 	outputFile types.Filepath
+
 	indentSize int
 }
 
-func (c *YAMLConverter) SetInput(input json.RawMessage) {
+func (c *XMLConverter) SetInput(input json.RawMessage) {
 	c.input = input
 }
 
-func (c *YAMLConverter) SetInputFile(inputFile types.Filepath) {
+func (c *XMLConverter) SetInputFile(inputFile types.Filepath) {
 	c.inputFile = inputFile
 }
 
-func (c *YAMLConverter) SetOutputFile(outputFile types.Filepath) {
+func (c *XMLConverter) SetOutputFile(outputFile types.Filepath) {
 	c.outputFile = outputFile
 }
 
-func (c *YAMLConverter) SetIndentSize(indentSize int) {
+func (c *XMLConverter) SetIndentSize(indentSize int) {
 	c.indentSize = indentSize
 }
 
-func (c *YAMLConverter) Convert() error {
-	outputFilepath := c.outputFile.WithExtension(types.YAML)
+func (c *XMLConverter) Convert() error {
+	outputPath := filepath.Join(".", "output", string(types.XML))
 
-	if err := os.MkdirAll(filepath.Dir(outputFilepath.String()), os.ModePerm); err != nil {
+	if err := os.MkdirAll(outputPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	fmt.Println("outputFilepath: ", outputFilepath.String())
-
-	fo, err := os.Create(outputFilepath.String())
+	fo, err := os.Create(fmt.Sprintf("output%s", string(types.XML.GetExtension())))
 	if err != nil {
 		return err
 	}
@@ -61,21 +61,21 @@ func (c *YAMLConverter) Convert() error {
 		return err
 	}
 
-	if err := convertToYAML(fo, output); err != nil {
+	if err := c.convertToXML(fo, output); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func convertToYAML(fo *os.File, output interface{}) error {
-	fo.WriteString("---\n")
+func (c XMLConverter) convertToXML(fo *os.File, output interface{}) error {
+	fo.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
 	// TODO: handle array of objects
 
 	for _, keyValuePair := range utils.SortedMap(output.(map[string]interface{})) {
 		k, v := keyValuePair.Key, keyValuePair.Value
-		if err := convertToYAMLHelper(fo, k, v, 0, -1); err != nil {
+		if err := c.convertToXMLHelper(fo, k, v, 0, -1); err != nil {
 			return err
 		}
 	}
@@ -83,8 +83,8 @@ func convertToYAML(fo *os.File, output interface{}) error {
 	return nil
 }
 
-func convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, idx int) error {
-	indent := utils.GetIndent(level)
+func (c XMLConverter) convertToXMLHelper(fo *os.File, key string, value interface{}, level int, idx int) error {
+	indent := utils.GetCustomIndent(level, c.indentSize)
 
 	switch value := value.(type) {
 	case map[string]interface{}:
@@ -97,14 +97,14 @@ func convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, 
 
 		for _, keyValuePair := range utils.SortedMap(value) {
 			k, v := keyValuePair.Key, keyValuePair.Value
-			convertToYAMLHelper(fo, k, v, level+1, -1)
+			c.convertToXMLHelper(fo, k, v, level+1, -1)
 		}
 
 	case []interface{}:
 		fo.WriteString(fmt.Sprintf("%s%s:\n", indent, key))
 
 		for idx, v := range value {
-			convertToYAMLHelper(fo, "-", v, level+1, idx)
+			c.convertToXMLHelper(fo, "-", v, level+1, idx)
 		}
 	default:
 		outputValue := value

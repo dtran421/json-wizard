@@ -1,43 +1,47 @@
 package providers_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/dtran421/json-wizard/providers"
-	"github.com/dtran421/json-wizard/types/convert"
+	"github.com/dtran421/json-wizard/types"
 )
+
+var outputFilepath types.Filepath = types.NewFilepath("../test/output/yaml/output.yaml")
+var inputFilepath types.Filepath = types.NewFilepath("../test/input.json")
 
 var cmd providers.ConvertCmd
 
 func setupTest() {
 	cmd = providers.ConvertCmd{}
+	cmd.SetOutputFormat(types.YAML)
+	cmd.SetOutputFile(outputFilepath.String())
 }
 
 func TestValidateOutputFormat_HappyPath(t *testing.T) {
 	cases := []struct {
 		in   string
-		want convert.OutputFormat
+		want types.OutputFormat
 	}{
 		{
 			in:   "yaml",
-			want: convert.YAML,
+			want: types.YAML,
 		},
 		{
 			in:   "xml",
-			want: convert.XML,
+			want: types.XML,
 		},
 		{
 			in:   "ts",
-			want: convert.TS,
+			want: types.TS,
 		},
 		{
 			in:   "go",
-			want: convert.GO,
+			want: types.GO,
 		},
 		{
 			in:   "rs",
-			want: convert.RS,
+			want: types.RS,
 		},
 	}
 
@@ -47,7 +51,7 @@ func TestValidateOutputFormat_HappyPath(t *testing.T) {
 		cmd.SetRawOutputFormat(c.in)
 		cmd.ValidateOutputFormat()
 
-		if got := cmd.GetOutputFormat(); got != c.want {
+		if got := cmd.OutputFormat(); got != c.want {
 			t.Errorf("ValidateOutputFormat(%q) == %q, want %q", c.in, got, c.want)
 		}
 	}
@@ -79,7 +83,7 @@ func TestValidateOutputFormat_Error(t *testing.T) {
 func TestValidateInputFile_HappyPath(t *testing.T) {
 	setupTest()
 
-	cmd.SetInputFile("../test/input.json")
+	cmd.SetInputFile(inputFilepath.String())
 
 	if err := cmd.ValidateInputFile(); err != nil {
 		t.Errorf("ValidateInputFile() == %v, want nil", err)
@@ -87,65 +91,83 @@ func TestValidateInputFile_HappyPath(t *testing.T) {
 }
 
 func TestValidateInputFile_Ignored(t *testing.T) {
-	setupTest()
-
-	cmd.SetInputFile("")
-
-	if err := cmd.ValidateInputFile(); err != nil {
-		t.Errorf("ValidateInputFile() == %v, want nil", err)
+	cases := []struct {
+		inputFile types.Filepath
+		input     string
+	}{
+		{
+			inputFile: types.NewFilepath(""),
+			input:     "",
+		},
+		{
+			inputFile: inputFilepath,
+			input:     `{"key": "value"}`,
+		},
+		{
+			inputFile: types.NewFilepath(""),
+			input:     `{"key": "value"}`,
+		},
 	}
 
-	cmd.SetInputFile("../test/input.json")
-	cmd.SetInput([]byte(`{"key": "value"}`))
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateInputFile(); err != nil {
-		t.Errorf("ValidateInputFile() == %v, want nil", err)
+		cmd.SetInputFile(c.inputFile.String())
+		cmd.SetInput([]byte(c.input))
+
+		if err := cmd.ValidateInputFile(); err != nil {
+			t.Errorf("ValidateInputFile() == %v, want nil", err)
+		}
 	}
 
-	cmd.SetInputFile("")
-	cmd.SetInput([]byte(`{"key": "value"}`))
-
-	if err := cmd.ValidateInputFile(); err != nil {
-		t.Errorf("ValidateInputFile() == %v, want nil", err)
-	}
 }
 
 func TestValidateInputFile_Error(t *testing.T) {
-	setupTest()
-
-	cmd.SetInputFile("invalid.json")
-
-	if err := cmd.ValidateInputFile(); err == nil {
-		t.Errorf("ValidateInputFile() == nil, want error")
+	cases := []struct {
+		inputFile types.Filepath
+	}{
+		{
+			inputFile: types.NewFilepath("invalid.json"),
+		},
+		{
+			inputFile: types.NewFilepath("../test/invalid.json"),
+		},
+		{
+			inputFile: types.NewFilepath("../test/strategy/convert/invalid/input"),
+		},
+		{
+			inputFile: types.NewFilepath("../test/strategy/convert/invalid/input.txt"),
+		},
 	}
 
-	cmd.SetInputFile("../test/invalid.json")
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateInputFile(); err == nil {
-		t.Errorf("ValidateInputFile() == nil, want error")
-	}
+		cmd.SetInputFile(c.inputFile.String())
 
-	cmd.SetInputFile("../test/input")
-
-	if err := cmd.ValidateInputFile(); err == nil {
-		t.Errorf("ValidateInputFile() == nil, want error")
-	}
-
-	cmd.SetInputFile("../test/input.txt")
-
-	if err := cmd.ValidateInputFile(); err == nil {
-		t.Errorf("ValidateInputFile() == nil, want error")
+		if err := cmd.ValidateInputFile(); err == nil {
+			t.Errorf("ValidateInputFile() == nil, want error")
+		}
 	}
 }
 
 func TestValidateOutputFile_HappyPath(t *testing.T) {
-	setupTest()
+	cases := []struct {
+		outputFile types.Filepath
+	}{
+		{
+			outputFile: types.NewFilepath("output.yaml"),
+		},
+	}
 
-	cmd.SetOutputFormat(convert.YAML)
-	cmd.SetOutputFile("output.yaml")
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateOutputFile(); err != nil {
-		t.Errorf("ValidateOutputFile() == %v, want nil", err)
+		cmd.SetOutputFile(c.outputFile.String())
+
+		if err := cmd.ValidateOutputFile(); err != nil {
+			t.Errorf("ValidateOutputFile() == %v, want nil", err)
+		}
 	}
 }
 
@@ -160,20 +182,72 @@ func TestValidateOutputFile_Ignored(t *testing.T) {
 }
 
 func TestValidateOutputFile_Error(t *testing.T) {
-	setupTest()
-
-	cmd.SetOutputFormat(convert.YAML)
-
-	cmd.SetOutputFile("output")
-
-	if err := cmd.ValidateOutputFile(); err == nil {
-		t.Errorf("ValidateOutputFile() == nil, want error")
+	cases := []struct {
+		outputFile types.Filepath
+	}{
+		{
+			outputFile: types.NewFilepath("output"),
+		},
+		{
+			outputFile: types.NewFilepath("output.txt"),
+		},
 	}
 
-	cmd.SetOutputFile("output.txt")
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateOutputFile(); err == nil {
-		t.Errorf("ValidateOutputFile() == nil, want error")
+		cmd.SetOutputFile(c.outputFile.String())
+
+		if err := cmd.ValidateOutputFile(); err == nil {
+			t.Errorf("ValidateOutputFile() == nil, want error")
+		}
+
+	}
+}
+
+func TestValidateIndentSize_HappyPath(t *testing.T) {
+	cases := []struct {
+		indentSize int
+	}{
+		{
+			indentSize: 0,
+		},
+		{
+			indentSize: 2,
+		},
+		{
+			indentSize: 4,
+		},
+	}
+
+	for _, c := range cases {
+		setupTest()
+
+		cmd.SetIndentSize(c.indentSize)
+
+		if err := cmd.ValidateIndentSize(); err != nil {
+			t.Errorf("ValidateIndentSize() == %v, want nil", err)
+		}
+	}
+}
+
+func TestValidateIndentSize_Error(t *testing.T) {
+	cases := []struct {
+		indentSize int
+	}{
+		{
+			indentSize: -1,
+		},
+	}
+
+	for _, c := range cases {
+		setupTest()
+
+		cmd.SetIndentSize(c.indentSize)
+
+		if err := cmd.ValidateIndentSize(); err == nil {
+			t.Errorf("ValidateIndentSize() == nil, want error")
+		}
 	}
 }
 
@@ -190,98 +264,131 @@ func TestValidateFlags_HappyPath(t *testing.T) {
 }
 
 func TestValidateFlags_Error(t *testing.T) {
-	setupTest()
-
-	cmd.SetRawOutputFormat("invalid")
-	cmd.SetInputFile("../test/input.json")
-
-	if err := cmd.ValidateFlags(); err == nil {
-		t.Errorf("ValidateFlags() == nil, want error")
+	cases := []struct {
+		rawOutputFormat string
+		inputFile       types.Filepath
+		outputFile      string
+	}{
+		{
+			rawOutputFormat: "invalid",
+			inputFile:       inputFilepath,
+			outputFile:      "output.yaml",
+		},
+		{
+			rawOutputFormat: "yaml",
+			inputFile:       types.NewFilepath("invalid.json"),
+			outputFile:      "output.yaml",
+		},
+		{
+			rawOutputFormat: "yaml",
+			inputFile:       inputFilepath,
+			outputFile:      "output",
+		},
 	}
 
-	cmd.SetRawOutputFormat("yaml")
-	cmd.SetInputFile("invalid.json")
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateFlags(); err == nil {
-		t.Errorf("ValidateFlags() == nil, want error")
-	}
+		cmd.SetRawOutputFormat(c.rawOutputFormat)
+		cmd.SetInputFile(c.inputFile.String())
+		cmd.SetOutputFile(c.outputFile)
 
-	cmd.SetRawOutputFormat("yaml")
-	cmd.SetInputFile("../test/input.json")
-	cmd.SetOutputFile("output")
-
-	if err := cmd.ValidateFlags(); err == nil {
-		t.Errorf("ValidateFlags() == nil, want error")
+		if err := cmd.ValidateFlags(); err == nil {
+			t.Errorf("ValidateFlags() == nil, want error")
+		}
 	}
 }
 
 func TestValidateFn_HappyPath(t *testing.T) {
-	setupTest()
-
-	args := []string{`{"key": "value"}`}
-	cmd.SetRawOutputFormat("yaml")
-
-	if err := cmd.ValidateFn(nil, args); err != nil {
-		t.Errorf("ValidateFn() == %v, want nil", err)
+	cases := []struct {
+		rawOutputFormat string
+		args            []string
+		inputFile       types.Filepath
+	}{
+		{
+			rawOutputFormat: "yaml",
+			args:            []string{`{"key": "value"}`},
+			inputFile:       types.NewFilepath(""),
+		},
+		{
+			rawOutputFormat: "yaml",
+			args:            []string{},
+			inputFile:       inputFilepath,
+		},
+		{
+			rawOutputFormat: "yaml",
+			args:            []string{`{"key": "value"}`},
+			inputFile:       inputFilepath,
+		},
 	}
 
-	cmd.SetInputFile("../test/input.json")
+	for _, c := range cases {
+		setupTest()
 
-	if err := cmd.ValidateFn(nil, args); err != nil {
-		t.Errorf("ValidateFn() == %v, want nil", err)
-	}
+		cmd.SetRawOutputFormat(c.rawOutputFormat)
+		cmd.SetInputFile(c.inputFile.String())
 
-	args = []string{}
-
-	if err := cmd.ValidateFn(nil, args); err != nil {
-		t.Errorf("ValidateFn() == %v, want nil", err)
+		if err := cmd.ValidateFn(nil, c.args); err != nil {
+			t.Errorf("ValidateFn() == %v, want nil", err)
+		}
 	}
 }
 
 func TestValidateFn_Error(t *testing.T) {
-	setupTest()
-
-	cmd.SetRawOutputFormat("yaml")
-
-	args := []string{}
-
-	if err := cmd.ValidateFn(nil, args); err == nil {
-		t.Errorf("ValidateFn() == nil, want error")
+	cases := []struct {
+		rawOutputFormat string
+		inputFile       types.Filepath
+		args            []string
+	}{
+		{
+			rawOutputFormat: "yaml",
+			inputFile:       types.NewFilepath(""),
+			args:            []string{""},
+		},
+		{
+			rawOutputFormat: "invalid",
+			inputFile:       types.NewFilepath(""),
+			args:            []string{`{"key": "value"}`},
+		},
+		{
+			rawOutputFormat: "yaml",
+			inputFile:       types.NewFilepath(""),
+			args:            []string{`{"key": [}}`},
+		},
+		{
+			rawOutputFormat: "yaml",
+			inputFile:       types.NewFilepath("invalid.json"),
+			args:            []string{},
+		},
 	}
 
-	cmd.SetRawOutputFormat("invalid")
+	for _, c := range cases {
+		setupTest()
 
-	args = []string{`{"key": "value"}`}
+		cmd.SetRawOutputFormat(c.rawOutputFormat)
+		cmd.SetInputFile(c.inputFile.String())
 
-	if err := cmd.ValidateFn(nil, args); err == nil {
-		t.Errorf("ValidateFn() == nil, want error")
-	}
-
-	args = []string{`{"key": [}}`}
-
-	if err := cmd.ValidateFn(nil, args); err == nil {
-		fmt.Printf("%v\n", err)
-		t.Errorf("ValidateFn() == nil, want error")
+		if err := cmd.ValidateFn(nil, c.args); err == nil {
+			t.Errorf("ValidateFn() == nil, want error")
+		}
 	}
 }
 
 func TestConvertJSON_toYAML_HappyPath(t *testing.T) {
 	setupTest()
 
-	cmd.SetOutputFormat(convert.YAML)
 	cmd.SetInput([]byte(`{"key": "value"}`))
-	cmd.SetOutputFile("../test/output/output.yaml")
 
 	if err := cmd.ConvertJSON(); err != nil {
 		t.Errorf("ConvertJSON() == %v, want nil", err)
 	}
 }
 
-func TestConvertJSON9_Error(t *testing.T) {
+func TestConvertJSON_Error(t *testing.T) {
 	setupTest()
 
+	cmd.SetOutputFormat(types.OutputFormat("invalid"))
 	cmd.SetInput([]byte(`{"key": [}}`))
-	cmd.SetOutputFile("../test/output/output.yaml")
 
 	if err := cmd.ConvertJSON(); err == nil {
 		t.Errorf("ConvertJSON() == nil, want error")

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
-	convertStrategy "github.com/dtran421/json-wizard/strategy/convert"
-	"github.com/dtran421/json-wizard/types/convert"
+	"github.com/dtran421/json-wizard/strategy/convert"
+	"github.com/dtran421/json-wizard/types"
+	convertTypes "github.com/dtran421/json-wizard/types/convert"
 	"github.com/spf13/cobra"
 )
 
@@ -18,49 +18,39 @@ type ConvertCmd struct {
 
 	input json.RawMessage
 
-	outputFormat convert.OutputFormat
-	inputFile    string
-	outputFile   string
-}
+	outputFormat types.OutputFormat
+	inputFile    types.Filepath
+	outputFile   types.Filepath
 
-func (cmdStruct ConvertCmd) GetRawOutputFormat() string {
-	return cmdStruct.rawOutputFormat
+	indentSize int
 }
 
 func (cmdStruct *ConvertCmd) SetRawOutputFormat(rawOutputFormat string) {
 	cmdStruct.rawOutputFormat = rawOutputFormat
 }
 
-func (cmdStruct ConvertCmd) GetInput() json.RawMessage {
-	return cmdStruct.input
-}
-
 func (cmdStruct *ConvertCmd) SetInput(input json.RawMessage) {
 	cmdStruct.input = input
 }
 
-func (cmdStruct ConvertCmd) GetOutputFormat() convert.OutputFormat {
+func (cmdStruct ConvertCmd) OutputFormat() types.OutputFormat {
 	return cmdStruct.outputFormat
 }
 
-func (cmdStruct *ConvertCmd) SetOutputFormat(outputFormat convert.OutputFormat) {
+func (cmdStruct *ConvertCmd) SetOutputFormat(outputFormat types.OutputFormat) {
 	cmdStruct.outputFormat = outputFormat
 }
 
-func (cmdStruct ConvertCmd) GetInputFile() string {
-	return cmdStruct.inputFile
-}
-
 func (cmdStruct *ConvertCmd) SetInputFile(inputFile string) {
-	cmdStruct.inputFile = inputFile
-}
-
-func (cmdStruct ConvertCmd) GetOutputFile() string {
-	return cmdStruct.outputFile
+	cmdStruct.inputFile = types.NewFilepath(inputFile)
 }
 
 func (cmdStruct *ConvertCmd) SetOutputFile(outputFile string) {
-	cmdStruct.outputFile = outputFile
+	cmdStruct.outputFile = types.NewFilepath(outputFile)
+}
+
+func (cmdStruct *ConvertCmd) SetIndentSize(indentSize int) {
+	cmdStruct.indentSize = indentSize
 }
 
 func (cmdStruct ConvertCmd) ValidateFn(cmd *cobra.Command, args []string) error {
@@ -68,11 +58,11 @@ func (cmdStruct ConvertCmd) ValidateFn(cmd *cobra.Command, args []string) error 
 		return err
 	}
 
-	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil && cmdStruct.inputFile == "" {
+	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil && cmdStruct.inputFile.IsEmpty() {
 		return err
 	}
 
-	if cmdStruct.inputFile != "" {
+	if !cmdStruct.inputFile.IsEmpty() {
 		return nil
 	}
 
@@ -107,8 +97,8 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 	}
 
 	switch cmdStruct.rawOutputFormat {
-	case string(convert.YAML), string(convert.XML), string(convert.TS), string(convert.GO), string(convert.RS):
-		cmdStruct.outputFormat = convert.OutputFormat(cmdStruct.rawOutputFormat)
+	case string(types.YAML), string(types.XML), string(types.TS), string(types.GO), string(types.RS):
+		cmdStruct.outputFormat = types.OutputFormat(cmdStruct.rawOutputFormat)
 		return nil
 	default:
 		return fmt.Errorf("invalid output format specified: %s", cmdStruct.rawOutputFormat)
@@ -116,7 +106,7 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 }
 
 func (cmdStruct ConvertCmd) ValidateInputFile() error {
-	if cmdStruct.inputFile == "" {
+	if cmdStruct.inputFile.IsEmpty() {
 		return nil
 	}
 
@@ -125,25 +115,34 @@ func (cmdStruct ConvertCmd) ValidateInputFile() error {
 		return nil
 	}
 
-	if _, err := os.Stat(cmdStruct.inputFile); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(cmdStruct.inputFile.String()); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("input file does not exist: %s", cmdStruct.inputFile)
 	}
 
-	if extension := filepath.Ext(cmdStruct.inputFile); extension != ".json" {
+	if extension := cmdStruct.inputFile.Extension(); extension != ".json" {
 		return fmt.Errorf("input file must be a JSON file")
 	}
 
 	return nil
 }
 
-func (cmdStruct ConvertCmd) ValidateOutputFile() error {
-	if cmdStruct.outputFile == "" {
+func (cmdStruct *ConvertCmd) ValidateOutputFile() error {
+	if cmdStruct.outputFile.Base() == "" {
+		cmdStruct.outputFile = types.NewFilepath("output").WithExtension(cmdStruct.outputFormat)
 		return nil
 	}
 
 	var outputFormatExtension = cmdStruct.outputFormat.GetExtension()
-	if extension := filepath.Ext(cmdStruct.outputFile); extension != string(outputFormatExtension) {
+	if extension := cmdStruct.outputFile.Extension(); extension != string(outputFormatExtension) {
 		return fmt.Errorf("output file must have the extension %s, got %s", outputFormatExtension, extension)
+	}
+
+	return nil
+}
+
+func (cmdStruct ConvertCmd) ValidateIndentSize() error {
+	if cmdStruct.indentSize < 0 {
+		return fmt.Errorf("indent size must be a positive integer")
 	}
 
 	return nil
@@ -152,27 +151,28 @@ func (cmdStruct ConvertCmd) ValidateOutputFile() error {
 func (cmdStruct ConvertCmd) ConvertJSON() error {
 	fmt.Printf("Converting %s to %s\n", cmdStruct.input, cmdStruct.outputFormat)
 
+	var convertStrategy convertTypes.ConvertStrategy
+
 	switch cmdStruct.outputFormat {
-	case convert.YAML:
-		fmt.Println("Converting to YAML")
-
-		yamlConvert := convertStrategy.YAMLConverter{}
-		yamlConvert.SetInput(cmdStruct.input)
-		yamlConvert.SetInputFile(cmdStruct.inputFile)
-
-		yamlConvert.Convert()
-
-	case convert.XML:
-		fmt.Println("Converting to XML")
-	case convert.TS:
+	case types.YAML:
+		convertStrategy = &convert.YAMLConverter{}
+	case types.XML:
+		convertStrategy = &convert.XMLConverter{}
+	case types.TS:
 		fmt.Println("Converting to TypeScript")
-	case convert.GO:
+	case types.GO:
 		fmt.Println("Converting to Go struct")
-	case convert.RS:
+	case types.RS:
 		fmt.Println("Converting to Rust struct")
 	default:
 		return fmt.Errorf("invalid output format specified: %s", cmdStruct.outputFormat)
 	}
+
+	convertStrategy.SetInput(cmdStruct.input)
+	convertStrategy.SetInputFile(cmdStruct.inputFile)
+	convertStrategy.SetOutputFile(cmdStruct.outputFile)
+
+	convertStrategy.Convert()
 
 	return nil
 }

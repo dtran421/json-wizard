@@ -20,3 +20,6 @@ json-wizard
 
 # Go workspace file
 go.work
+
+# Test outputs
+test/output

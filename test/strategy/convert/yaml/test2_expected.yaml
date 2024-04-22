@@ -1,0 +1,16 @@
+---
+booleans:
+  - true
+  - false
+  - true
+  - false
+numbers:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+strings:
+  - "apple"
+  - "banana"
+  - "cherry"

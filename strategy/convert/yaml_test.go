@@ -12,31 +12,45 @@ import (
 
 var conv convert.YAMLConverter
 
-var outputFilepath types.Filepath = "output.yaml"
+var testFilepath types.Filepath = types.NewFilepath("../../test/strategy/convert/yaml/")
+var outputFilepath types.Filepath = types.NewFilepath("output.yaml")
 
 func setupTest() {
 	conv = convert.YAMLConverter{}
+	conv.SetOutputFile(testFilepath.Append(outputFilepath))
+}
+
+func teardownTest(t *testing.T, in types.Filepath, openTestOutputFiles ...*os.File) {
+	for _, openTestOutputFile := range openTestOutputFiles {
+		if err := openTestOutputFile.Close(); err != nil {
+			t.Errorf("Convert(%s): %s", in.String(), err)
+		}
+
+		// if err := os.Remove(openTestOutputFile.Name()); err != nil {
+		// 	t.Errorf("Convert(%q): %s", in, err)
+		// }
+	}
 }
 
 func TestConvert_HappyPath(t *testing.T) {
 	cases := []struct {
-		in               string
+		in               types.Filepath
 		expectedFilepath types.Filepath
 	}{
 		{
-			in:               "../../test/strategy/convert/test1_input.json",
-			expectedFilepath: "../../test/strategy/convert/test1_expected.yaml",
+			in:               types.NewFilepath("test1_input.json"),
+			expectedFilepath: types.NewFilepath("test1_expected.yaml"),
 		},
 		{
-			in:               "../../test/strategy/convert/test2_input.json",
-			expectedFilepath: "../../test/strategy/convert/test2_expected.yaml",
+			in:               types.NewFilepath("test2_input.json"),
+			expectedFilepath: types.NewFilepath("test2_expected.yaml"),
 		},
 	}
 
 	for _, c := range cases {
 		setupTest()
 
-		var input, inputErr = os.Open(string(c.in))
+		var input, inputErr = os.Open(testFilepath.Append(c.in).String())
 		if inputErr != nil {
 			t.Errorf("Convert(%q): %s", c.in, inputErr)
 			continue
@@ -50,22 +64,20 @@ func TestConvert_HappyPath(t *testing.T) {
 			inputString += inputScanner.Text()
 		}
 
-		fmt.Printf("inputString: %s\n", inputString)
-
 		conv.SetInput([]byte(inputString))
 
 		if err := conv.Convert(); err != nil {
 			t.Errorf("Convert(%q) == %q, want nil", c.in, err)
 		}
 
-		var outputFile, outputErr = os.Open(string(outputFilepath))
+		var outputFile, outputErr = os.Create(testFilepath.Append(outputFilepath).String())
 		if outputErr != nil {
 			t.Errorf("Convert(%q): %s", c.in, outputErr)
 			continue
 		}
-		defer outputFile.Close()
+		defer teardownTest(t, c.in, outputFile)
 
-		var expectedFile, expectedErr = os.Open(string(c.expectedFilepath))
+		var expectedFile, expectedErr = os.Open(testFilepath.Append(c.expectedFilepath).String())
 		if expectedErr != nil {
 			t.Errorf("Convert(%q): %s", c.in, expectedErr)
 			continue
@@ -74,6 +86,8 @@ func TestConvert_HappyPath(t *testing.T) {
 
 		expectedScanner := bufio.NewScanner(expectedFile)
 		outputScanner := bufio.NewScanner(outputFile)
+
+		fmt.Println("outputFile.Name():", outputFile.Name())
 
 		for {
 			var expectedScan, outputScan = expectedScanner.Scan(), outputScanner.Scan()

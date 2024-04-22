@@ -52,19 +52,26 @@ func init() {
 	var inputFile string
 	var outputFile string
 
-	convertCmd.Flags().StringVarP(&rawOutputFormat, "outputFormat", "o", "",
+	var indentSize int
+
+	convertCmd.Flags().StringVarP(&rawOutputFormat, "outputFormat", "f", "",
 		"output format (required, one of: yaml, xml, ts, go, rs)")
 	rootCmd.MarkFlagRequired("output")
 
 	cmdStruct.SetRawOutputFormat(rawOutputFormat)
 
-	convertCmd.Flags().StringVarP(&inputFile, "inputFile", "i", "",
+	convertCmd.Flags().StringVarP(&inputFile, "inputFile", "in", "",
 		"input file to convert (will ignore if input is provided)")
 
 	cmdStruct.SetInputFile(inputFile)
 
-	convertCmd.Flags().StringVarP(&outputFile, "outputFile", "f", "",
-		"output file to write the converted JSON")
+	convertCmd.Flags().StringVarP(&outputFile, "outputFile", "o", "",
+		"output file path to write the converted JSON")
 
 	cmdStruct.SetOutputFile(outputFile)
+
+	convertCmd.Flags().IntVarP(&indentSize, "indent", "i", 2,
+		"indent size for the output file")
+
+	cmdStruct.SetIndentSize(indentSize)
 }
