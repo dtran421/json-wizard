@@ -5,9 +5,10 @@ import (
 
 	"github.com/dtran421/json-wizard/providers"
 	"github.com/dtran421/json-wizard/types"
+	"github.com/dtran421/json-wizard/utils"
 )
 
-var outputFilepath types.Filepath = types.NewFilepath("../test/output/yaml/output.yaml")
+var outputFilepath types.Filepath = utils.Rootpath().Append("/output/yaml/output.yaml")
 var inputFilepath types.Filepath = types.NewFilepath("../test/input.json")
 
 var cmd providers.ConvertCmd

@@ -2,9 +2,14 @@ package types
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
+
+func HomeDirpath() Filepath {
+	return NewFilepath("/")
+}
 
 type OutputFormat string
 
@@ -38,45 +43,98 @@ func (f OutputFormat) GetExtension() Extension {
 type Filepath string
 
 func NewFilepath(pathname string) Filepath {
-	return Filepath(filepath.Join(".", pathname))
+	pathname = strings.TrimSuffix(pathname, "/")
+
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Errorf("error getting user home directory: %v", err))
+	}
+
+	if pathname == dirname {
+		return Filepath(dirname)
+	}
+
+	if strings.HasPrefix(pathname, dirname) {
+		return Filepath(pathname)
+	}
+
+	return Filepath(filepath.Join(dirname, pathname))
+}
+
+func NewFilepathFromAbsPath(pathname string) Filepath {
+	pathname = strings.TrimSuffix(pathname, "/")
+
+	if pathname == "" {
+		return Filepath("/")
+	}
+
+	if !strings.HasPrefix(pathname, "/") {
+		return Filepath(fmt.Sprintf("/%s", pathname))
+	}
+
+	return Filepath(pathname)
+}
+
+func (f Filepath) WithPrefix(prefix Filepath) Filepath {
+	if prefix.IsEmpty() {
+		return f
+	}
+
+	if f.HasPrefix(prefix) {
+		return f
+	}
+
+	pathname := strings.TrimPrefix(f.String(), HomeDirpath().String())
+
+	return NewFilepathFromAbsPath(fmt.Sprintf("%s%s", prefix.String(), pathname))
 }
 
 func (f Filepath) WithExtension(format OutputFormat) Filepath {
-	// remove ending slash if it exists
-	pathname := strings.TrimSuffix(string(f), "/")
+	if f.Extension() == string(format.GetExtension()) {
+		return f
+	}
 
-	// remove the extension if it exists
-	pathname = strings.TrimSuffix(pathname, string(format.GetExtension()))
-
-	return Filepath(fmt.Sprintf("%s%s", pathname, string(format.GetExtension())))
+	return NewFilepath(fmt.Sprintf("%s%s", f.String(), string(format.GetExtension())))
 }
 
-func (f Filepath) Append(filepath Filepath) Filepath {
-	pathname := strings.TrimSuffix(string(f), "/")
+func (f Filepath) Append(pathname string) Filepath {
+	if f.IsEmpty() {
+		return NewFilepath(pathname)
+	}
 
-	return Filepath(fmt.Sprintf("%s/%s", pathname, filepath))
+	formattedFilepath := strings.TrimPrefix(pathname, HomeDirpath().String())
+
+	return NewFilepath(fmt.Sprintf("%s%s", f.String(), NewFilepathFromAbsPath(formattedFilepath).String()))
 }
 
 func (f Filepath) Directory() string {
-	return filepath.Dir(string(f))
+	return filepath.Dir(f.String())
 }
 
 func (f Filepath) Base() string {
-	base := filepath.Base(string(f))
-
-	if base == "." {
+	if f.IsEmpty() {
 		return ""
 	}
+
+	base := filepath.Base(f.String())
 
 	return base
 }
 
 func (f Filepath) Extension() string {
-	return filepath.Ext(string(f))
+	return filepath.Ext(f.String())
+}
+
+func (f Filepath) HasPrefix(prefix Filepath) bool {
+	return strings.HasPrefix(f.String(), prefix.String())
+}
+
+func (f Filepath) IsAtHomeDir() bool {
+	return f.HasPrefix(HomeDirpath()) && f == HomeDirpath()
 }
 
 func (f Filepath) IsEmpty() bool {
-	return f == "."
+	return f == "/"
 }
 
 func (f Filepath) String() string {

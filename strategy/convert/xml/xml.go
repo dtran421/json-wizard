@@ -1,4 +1,4 @@
-package convert
+package xml
 
 import (
 	"encoding/json"
@@ -12,11 +12,9 @@ import (
 )
 
 type XMLConverter struct {
-	input json.RawMessage
-
+	input      json.RawMessage
 	inputFile  types.Filepath
 	outputFile types.Filepath
-
 	indentSize int
 }
 
@@ -37,13 +35,15 @@ func (c *XMLConverter) SetIndentSize(indentSize int) {
 }
 
 func (c *XMLConverter) Convert() error {
-	outputPath := filepath.Join(".", "output", string(types.XML))
+	outputFilepath := c.outputFile.WithExtension(types.XML)
 
-	if err := os.MkdirAll(outputPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputFilepath.String()), os.ModePerm); err != nil {
 		return err
 	}
 
-	fo, err := os.Create(fmt.Sprintf("output%s", string(types.XML.GetExtension())))
+	fmt.Println("outputFilepath: ", outputFilepath.String())
+
+	fo, err := os.Create(outputFilepath.String())
 	if err != nil {
 		return err
 	}
@@ -61,29 +61,23 @@ func (c *XMLConverter) Convert() error {
 		return err
 	}
 
-	if err := c.convertToXML(fo, output); err != nil {
-		return err
-	}
+	c.convertToXML(fo, output)
 
 	return nil
 }
 
-func (c XMLConverter) convertToXML(fo *os.File, output interface{}) error {
-	fo.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+func (c XMLConverter) convertToXML(fo *os.File, output interface{}) {
+	fo.WriteString(`<?xml version="1.0" encoding="UTF-8"?>\n`)
 
 	// TODO: handle array of objects
 
 	for _, keyValuePair := range utils.SortedMap(output.(map[string]interface{})) {
 		k, v := keyValuePair.Key, keyValuePair.Value
-		if err := c.convertToXMLHelper(fo, k, v, 0, -1); err != nil {
-			return err
-		}
+		c.convertToXMLHelper(fo, k, v, 0, -1)
 	}
-
-	return nil
 }
 
-func (c XMLConverter) convertToXMLHelper(fo *os.File, key string, value interface{}, level int, idx int) error {
+func (c XMLConverter) convertToXMLHelper(fo *os.File, key string, value interface{}, level int, idx int) {
 	indent := utils.GetCustomIndent(level, c.indentSize)
 
 	switch value := value.(type) {
@@ -114,11 +108,10 @@ func (c XMLConverter) convertToXMLHelper(fo *os.File, key string, value interfac
 
 		if key == "-" {
 			fo.WriteString(fmt.Sprintf("%s- %v\n", indent, outputValue))
-			return nil
+			return
 		}
 
 		fo.WriteString(fmt.Sprintf("%s%s: %v\n", indent, key, outputValue))
 	}
 
-	return nil
 }

@@ -1,4 +1,4 @@
-package convert
+package yaml
 
 import (
 	"encoding/json"
@@ -61,30 +61,24 @@ func (c *YAMLConverter) Convert() error {
 		return err
 	}
 
-	if err := convertToYAML(fo, output); err != nil {
-		return err
-	}
+	c.convertToYAML(fo, output)
 
 	return nil
 }
 
-func convertToYAML(fo *os.File, output interface{}) error {
+func (c YAMLConverter) convertToYAML(fo *os.File, output interface{}) {
 	fo.WriteString("---\n")
 
 	// TODO: handle array of objects
 
 	for _, keyValuePair := range utils.SortedMap(output.(map[string]interface{})) {
 		k, v := keyValuePair.Key, keyValuePair.Value
-		if err := convertToYAMLHelper(fo, k, v, 0, -1); err != nil {
-			return err
-		}
+		c.convertToYAMLHelper(fo, k, v, 0, -1)
 	}
-
-	return nil
 }
 
-func convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, idx int) error {
-	indent := utils.GetIndent(level)
+func (c YAMLConverter) convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, idx int) {
+	indent := utils.GetCustomIndent(level, c.indentSize)
 
 	switch value := value.(type) {
 	case map[string]interface{}:
@@ -97,14 +91,14 @@ func convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, 
 
 		for _, keyValuePair := range utils.SortedMap(value) {
 			k, v := keyValuePair.Key, keyValuePair.Value
-			convertToYAMLHelper(fo, k, v, level+1, -1)
+			c.convertToYAMLHelper(fo, k, v, level+1, -1)
 		}
 
 	case []interface{}:
 		fo.WriteString(fmt.Sprintf("%s%s:\n", indent, key))
 
 		for idx, v := range value {
-			convertToYAMLHelper(fo, "-", v, level+1, idx)
+			c.convertToYAMLHelper(fo, "-", v, level+1, idx)
 		}
 	default:
 		outputValue := value
@@ -114,11 +108,10 @@ func convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, 
 
 		if key == "-" {
 			fo.WriteString(fmt.Sprintf("%s- %v\n", indent, outputValue))
-			return nil
+			return
 		}
 
 		fo.WriteString(fmt.Sprintf("%s%s: %v\n", indent, key, outputValue))
 	}
 
-	return nil
 }

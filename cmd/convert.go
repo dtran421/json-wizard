@@ -7,10 +7,13 @@ import (
 	"fmt"
 
 	"github.com/dtran421/json-wizard/providers"
+	"github.com/dtran421/json-wizard/strategy/convert"
 	"github.com/spf13/cobra"
 )
 
-var cmdStruct = providers.ConvertCmd{}
+var cmdStruct = providers.ConvertCmd{
+	Converter: *convert.NewConverterFactory(),
+}
 
 // convertCmd represents the convert command
 var convertCmd = &cobra.Command{

@@ -8,12 +8,13 @@ import (
 
 	"github.com/dtran421/json-wizard/strategy/convert"
 	"github.com/dtran421/json-wizard/types"
-	convertTypes "github.com/dtran421/json-wizard/types/convert"
 	"github.com/spf13/cobra"
 )
 
 // ConvertCmd represents the convert command
 type ConvertCmd struct {
+	Converter convert.ConverterFactory
+
 	rawOutputFormat string
 
 	input json.RawMessage
@@ -151,22 +152,7 @@ func (cmdStruct ConvertCmd) ValidateIndentSize() error {
 func (cmdStruct ConvertCmd) ConvertJSON() error {
 	fmt.Printf("Converting %s to %s\n", cmdStruct.input, cmdStruct.outputFormat)
 
-	var convertStrategy convertTypes.ConvertStrategy
-
-	switch cmdStruct.outputFormat {
-	case types.YAML:
-		convertStrategy = &convert.YAMLConverter{}
-	case types.XML:
-		convertStrategy = &convert.XMLConverter{}
-	case types.TS:
-		fmt.Println("Converting to TypeScript")
-	case types.GO:
-		fmt.Println("Converting to Go struct")
-	case types.RS:
-		fmt.Println("Converting to Rust struct")
-	default:
-		return fmt.Errorf("invalid output format specified: %s", cmdStruct.outputFormat)
-	}
+	convertStrategy := cmdStruct.Converter.BuildConverter(cmdStruct.outputFormat)
 
 	convertStrategy.SetInput(cmdStruct.input)
 	convertStrategy.SetInputFile(cmdStruct.inputFile)
