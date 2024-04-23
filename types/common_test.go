@@ -26,10 +26,6 @@ func TestGetExtension(t *testing.T) {
 			expected: ".yaml",
 		},
 		{
-			in:       types.XML,
-			expected: ".xml",
-		},
-		{
 			in:       types.TS,
 			expected: ".ts",
 		},
@@ -295,12 +291,16 @@ func TestBase(t *testing.T) {
 			expected: "test5",
 		},
 		{
+			in:       types.NewFilepathFromAbsPath("test/test6/test7/"),
+			expected: "test7",
+		},
+		{
 			in:       types.NewFilepath(""),
 			expected: types.HomeDirpath().Base(),
 		},
 		{
 			in:       types.NewFilepathFromAbsPath("/"),
-			expected: "",
+			expected: "/",
 		},
 	}
 

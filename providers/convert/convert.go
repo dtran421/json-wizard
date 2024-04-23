@@ -1,4 +1,4 @@
-package providers
+package convert
 
 import (
 	"encoding/json"
@@ -59,15 +59,14 @@ func (cmdStruct ConvertCmd) ValidateFn(cmd *cobra.Command, args []string) error 
 		return err
 	}
 
-	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil && cmdStruct.inputFile.IsEmpty() {
-		return err
-	}
+	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+		if cmdStruct.inputFile.IsEmpty() {
+			return err
+		}
 
-	if !cmdStruct.inputFile.IsEmpty() {
 		return nil
 	}
 
-	// Validate the JSON input
 	if json.Valid([]byte(args[0])) {
 		cmdStruct.input = json.RawMessage(args[0])
 		return nil
@@ -98,7 +97,7 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 	}
 
 	switch cmdStruct.rawOutputFormat {
-	case string(types.YAML), string(types.XML), string(types.TS), string(types.GO), string(types.RS):
+	case string(types.YAML), string(types.TS), string(types.GO), string(types.RS):
 		cmdStruct.outputFormat = types.OutputFormat(cmdStruct.rawOutputFormat)
 		return nil
 	default:
@@ -107,7 +106,7 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 }
 
 func (cmdStruct ConvertCmd) ValidateInputFile() error {
-	if cmdStruct.inputFile.IsEmpty() {
+	if cmdStruct.inputFile.IsEmpty() || cmdStruct.inputFile.IsAtHomeDir() {
 		return nil
 	}
 
@@ -128,7 +127,7 @@ func (cmdStruct ConvertCmd) ValidateInputFile() error {
 }
 
 func (cmdStruct *ConvertCmd) ValidateOutputFile() error {
-	if cmdStruct.outputFile.Base() == "" {
+	if types.NewFilepathFromAbsPath(cmdStruct.outputFile.Base()).IsEmpty() {
 		cmdStruct.outputFile = types.NewFilepath("output").WithExtension(cmdStruct.outputFormat)
 		return nil
 	}
@@ -152,7 +151,10 @@ func (cmdStruct ConvertCmd) ValidateIndentSize() error {
 func (cmdStruct ConvertCmd) ConvertJSON() error {
 	fmt.Printf("Converting %s to %s\n", cmdStruct.input, cmdStruct.outputFormat)
 
-	convertStrategy := cmdStruct.Converter.BuildConverter(cmdStruct.outputFormat)
+	convertStrategy, err := cmdStruct.Converter.BuildConverter(cmdStruct.outputFormat)
+	if err != nil {
+		return err
+	}
 
 	convertStrategy.SetInput(cmdStruct.input)
 	convertStrategy.SetInputFile(cmdStruct.inputFile)

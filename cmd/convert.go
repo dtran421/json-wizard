@@ -6,13 +6,13 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/dtran421/json-wizard/providers"
-	"github.com/dtran421/json-wizard/strategy/convert"
+	"github.com/dtran421/json-wizard/providers/convert"
+	convertStrategy "github.com/dtran421/json-wizard/strategy/convert"
 	"github.com/spf13/cobra"
 )
 
-var cmdStruct = providers.ConvertCmd{
-	Converter: *convert.NewConverterFactory(),
+var cmdStruct = convert.ConvertCmd{
+	Converter: *convertStrategy.NewConverterFactory(),
 }
 
 // convertCmd represents the convert command
@@ -23,7 +23,6 @@ var convertCmd = &cobra.Command{
 	Convert JSON to other formats, including:
 
 	- YAML
-	- XML
 	- TypeScript
 	- Go struct
 	- Rust struct
@@ -58,7 +57,7 @@ func init() {
 	var indentSize int
 
 	convertCmd.Flags().StringVarP(&rawOutputFormat, "outputFormat", "f", "",
-		"output format (required, one of: yaml, xml, ts, go, rs)")
+		"output format (required, one of: yaml, ts, go, rs)")
 	rootCmd.MarkFlagRequired("output")
 
 	cmdStruct.SetRawOutputFormat(rawOutputFormat)

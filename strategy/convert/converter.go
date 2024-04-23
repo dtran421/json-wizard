@@ -3,7 +3,7 @@ package convert
 import (
 	"fmt"
 
-	"github.com/dtran421/json-wizard/strategy/convert/xml"
+	"github.com/dtran421/json-wizard/strategy/convert/ts"
 	"github.com/dtran421/json-wizard/strategy/convert/yaml"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/types/convert"
@@ -15,21 +15,19 @@ func NewConverterFactory() *ConverterFactory {
 	return &ConverterFactory{}
 }
 
-func (c ConverterFactory) BuildConverter(outputFormat types.OutputFormat) convert.ConvertStrategy {
+func (c ConverterFactory) BuildConverter(outputFormat types.OutputFormat) (convert.ConvertStrategy, error) {
 	switch outputFormat {
 	case types.YAML:
-		return &yaml.YAMLConverter{}
-	case types.XML:
-		return &xml.XMLConverter{}
+		return yaml.NewYAMLConverter(), nil
 	case types.TS:
-		fmt.Println("Converting to TypeScript")
+		return ts.NewTSConverter(), nil
 	case types.GO:
 		fmt.Println("Converting to Go struct")
 	case types.RS:
 		fmt.Println("Converting to Rust struct")
 	default:
-		panic(fmt.Sprintf("invalid output format specified: %s", outputFormat))
+		return nil, fmt.Errorf("invalid output format specified: %s", outputFormat)
 	}
 
-	return nil
+	return nil, nil
 }

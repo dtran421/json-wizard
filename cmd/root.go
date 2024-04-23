@@ -34,7 +34,6 @@ var rootCmd = &cobra.Command{
 
 	- Convert JSON to YAML
 	- Convert YAML to JSON
-	- Convert JSON to XML
 	- Convert JSON to TypeScript
 	- Convert JSON to Go struct
 	- Convert JSON to Rust struct

@@ -1,20 +1,20 @@
-package providers_test
+package convert_test
 
 import (
 	"testing"
 
-	"github.com/dtran421/json-wizard/providers"
+	"github.com/dtran421/json-wizard/providers/convert"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
 var outputFilepath types.Filepath = utils.Rootpath().Append("/output/yaml/output.yaml")
-var inputFilepath types.Filepath = types.NewFilepath("../test/input.json")
+var inputFilepath types.Filepath = utils.TestPathname().Append("/input.json")
 
-var cmd providers.ConvertCmd
+var cmd convert.ConvertCmd
 
 func setupTest() {
-	cmd = providers.ConvertCmd{}
+	cmd = convert.ConvertCmd{}
 	cmd.SetOutputFormat(types.YAML)
 	cmd.SetOutputFile(outputFilepath.String())
 }
@@ -27,10 +27,6 @@ func TestValidateOutputFormat_HappyPath(t *testing.T) {
 		{
 			in:   "yaml",
 			want: types.YAML,
-		},
-		{
-			in:   "xml",
-			want: types.XML,
 		},
 		{
 			in:   "ts",
@@ -256,8 +252,8 @@ func TestValidateFlags_HappyPath(t *testing.T) {
 	setupTest()
 
 	cmd.SetRawOutputFormat("yaml")
-	cmd.SetInputFile("../test/input.json")
-	cmd.SetOutputFile("output.yaml")
+	cmd.SetInputFile(inputFilepath.String())
+	cmd.SetOutputFile(outputFilepath.String())
 
 	if err := cmd.ValidateFlags(); err != nil {
 		t.Errorf("ValidateFlags() == %v, want nil", err)
@@ -268,17 +264,17 @@ func TestValidateFlags_Error(t *testing.T) {
 	cases := []struct {
 		rawOutputFormat string
 		inputFile       types.Filepath
-		outputFile      string
+		outputFile      types.Filepath
 	}{
 		{
 			rawOutputFormat: "invalid",
 			inputFile:       inputFilepath,
-			outputFile:      "output.yaml",
+			outputFile:      outputFilepath,
 		},
 		{
 			rawOutputFormat: "yaml",
 			inputFile:       types.NewFilepath("invalid.json"),
-			outputFile:      "output.yaml",
+			outputFile:      outputFilepath,
 		},
 		{
 			rawOutputFormat: "yaml",
@@ -292,7 +288,7 @@ func TestValidateFlags_Error(t *testing.T) {
 
 		cmd.SetRawOutputFormat(c.rawOutputFormat)
 		cmd.SetInputFile(c.inputFile.String())
-		cmd.SetOutputFile(c.outputFile)
+		cmd.SetOutputFile(c.outputFile.String())
 
 		if err := cmd.ValidateFlags(); err == nil {
 			t.Errorf("ValidateFlags() == nil, want error")
@@ -370,7 +366,7 @@ func TestValidateFn_Error(t *testing.T) {
 		cmd.SetInputFile(c.inputFile.String())
 
 		if err := cmd.ValidateFn(nil, c.args); err == nil {
-			t.Errorf("ValidateFn() == nil, want error")
+			t.Errorf("ValidateFn(%s, %s, %v) == nil, want error", c.rawOutputFormat, c.inputFile, c.args)
 		}
 	}
 }

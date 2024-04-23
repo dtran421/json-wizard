@@ -18,6 +18,10 @@ type YAMLConverter struct {
 	indentSize int
 }
 
+func NewYAMLConverter() *YAMLConverter {
+	return &YAMLConverter{}
+}
+
 func (c *YAMLConverter) SetInput(input json.RawMessage) {
 	c.input = input
 }
@@ -41,8 +45,6 @@ func (c *YAMLConverter) Convert() error {
 		return err
 	}
 
-	fmt.Println("outputFilepath: ", outputFilepath.String())
-
 	fo, err := os.Create(outputFilepath.String())
 	if err != nil {
 		return err
@@ -56,17 +58,42 @@ func (c *YAMLConverter) Convert() error {
 		return nil
 	}()
 
+	if c.input != nil {
+		if err := c.convertInputToYAML(fo); err != nil {
+			return err
+		}
+	} else {
+		if err := c.convertInputFileToYAML(fo); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// TODO: need to implement this function
+func (c YAMLConverter) convertInputFileToYAML(fo *os.File) error {
+	fi, err := os.Open(c.inputFile.String())
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	// TODO: format the file
+
+	// TODO: convert the file to YAML line by line
+
+	fo.WriteString("---\n")
+
+	return nil
+}
+
+func (c YAMLConverter) convertInputToYAML(fo *os.File) error {
 	var output interface{}
 	if err := json.Unmarshal(c.input, &output); err != nil {
 		return err
 	}
 
-	c.convertToYAML(fo, output)
-
-	return nil
-}
-
-func (c YAMLConverter) convertToYAML(fo *os.File, output interface{}) {
 	fo.WriteString("---\n")
 
 	// TODO: handle array of objects
@@ -75,6 +102,8 @@ func (c YAMLConverter) convertToYAML(fo *os.File, output interface{}) {
 		k, v := keyValuePair.Key, keyValuePair.Value
 		c.convertToYAMLHelper(fo, k, v, 0, -1)
 	}
+
+	return nil
 }
 
 func (c YAMLConverter) convertToYAMLHelper(fo *os.File, key string, value interface{}, level int, idx int) {
@@ -84,7 +113,7 @@ func (c YAMLConverter) convertToYAMLHelper(fo *os.File, key string, value interf
 	case map[string]interface{}:
 		outputKey := key
 		if key == "-" {
-			outputKey = fmt.Sprintf("- %d", idx)
+			outputKey = fmt.Sprintf("%s- %d", indent, idx)
 		}
 
 		fo.WriteString(fmt.Sprintf("%s%s:\n", indent, outputKey))
@@ -100,10 +129,11 @@ func (c YAMLConverter) convertToYAMLHelper(fo *os.File, key string, value interf
 		for idx, v := range value {
 			c.convertToYAMLHelper(fo, "-", v, level+1, idx)
 		}
+
 	default:
 		outputValue := value
 		if reflect.TypeOf(outputValue).String() == "string" {
-			outputValue = fmt.Sprintf("\"%v\"", value)
+			outputValue = fmt.Sprintf("\"%s\"", value)
 		}
 
 		if key == "-" {
@@ -113,5 +143,4 @@ func (c YAMLConverter) convertToYAMLHelper(fo *os.File, key string, value interf
 
 		fo.WriteString(fmt.Sprintf("%s%s: %v\n", indent, key, outputValue))
 	}
-
 }

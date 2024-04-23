@@ -14,8 +14,8 @@ func HomeDirpath() Filepath {
 type OutputFormat string
 
 const (
+	JSON OutputFormat = "json"
 	YAML OutputFormat = "yaml"
-	XML  OutputFormat = "xml"
 	TS   OutputFormat = "ts"
 	GO   OutputFormat = "go"
 	RS   OutputFormat = "rs"
@@ -27,8 +27,6 @@ func (f OutputFormat) GetExtension() Extension {
 	switch f {
 	case YAML:
 		return ".yaml"
-	case XML:
-		return ".xml"
 	case TS:
 		return ".ts"
 	case GO:
@@ -112,8 +110,8 @@ func (f Filepath) Directory() string {
 }
 
 func (f Filepath) Base() string {
-	if f.IsEmpty() {
-		return ""
+	if f.IsEmpty() || f.IsAtHomeDir() {
+		return "/"
 	}
 
 	base := filepath.Base(f.String())

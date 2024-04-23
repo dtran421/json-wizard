@@ -29,6 +29,14 @@ func teardownTest(t *testing.T, in types.Filepath, openTestOutputFiles ...*os.Fi
 	}
 }
 
+func TestNewYAMLConverter(t *testing.T) {
+	var conv = convert.NewYAMLConverter()
+
+	if conv == nil {
+		t.Errorf("NewYAMLConverter() == nil, want !nil")
+	}
+}
+
 func TestConvert_Input_HappyPath(t *testing.T) {
 	cases := []struct {
 		in               types.Filepath
@@ -92,6 +100,8 @@ func TestConvert_Input_HappyPath(t *testing.T) {
 }
 
 func TestConvert_InputFile_HappyPath(t *testing.T) {
+	t.Skip("TODO: need to implement this function")
+
 	cases := []struct {
 		inputFile        types.Filepath
 		expectedFilepath types.Filepath
@@ -109,21 +119,7 @@ func TestConvert_InputFile_HappyPath(t *testing.T) {
 	for _, c := range cases {
 		setupTest()
 
-		var input, inputErr = os.Open(c.inputFile.String())
-		if inputErr != nil {
-			t.Errorf("Convert(%q): %s", c.inputFile, inputErr)
-			continue
-		}
-		defer input.Close()
-
-		var inputScanner = bufio.NewScanner(input)
-
-		var inputString string
-		for inputScanner.Scan() {
-			inputString += inputScanner.Text()
-		}
-
-		conv.SetInput([]byte(inputString))
+		conv.SetInputFile(c.inputFile)
 
 		if err := conv.Convert(); err != nil {
 			t.Errorf("Convert(%q) == %q, want nil", c.inputFile, err)

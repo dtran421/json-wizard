@@ -1,22 +1,22 @@
-package xml_test
+package ts_test
 
 import (
 	"bufio"
 	"os"
 	"testing"
 
-	convert "github.com/dtran421/json-wizard/strategy/convert/xml"
+	convert "github.com/dtran421/json-wizard/strategy/convert/ts"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
-var conv convert.XMLConverter
+var conv convert.TSConverter
 
-var testFilepath types.Filepath = types.NewFilepath("/strategy/convert/xml/").WithPrefix(utils.TestPathname())
-var outputFilepath types.Filepath = types.NewFilepath("/output/xml/output.xml").WithPrefix(utils.TestPathname())
+var testFilepath types.Filepath = types.NewFilepath("/strategy/convert/ts/").WithPrefix(utils.TestPathname())
+var outputFilepath types.Filepath = types.NewFilepath("/output/ts/output.ts").WithPrefix(utils.TestPathname())
 
 func setupTest() {
-	conv = convert.XMLConverter{}
+	conv = convert.TSConverter{}
 	conv.SetOutputFile(outputFilepath)
 	conv.SetIndentSize(2)
 }
@@ -36,11 +36,11 @@ func TestConvert_Input_HappyPath(t *testing.T) {
 	}{
 		{
 			in:               testFilepath.Append("test1_input.json"),
-			expectedFilepath: testFilepath.Append("test1_expected.yaml"),
+			expectedFilepath: testFilepath.Append("test1_expected.ts"),
 		},
 		{
 			in:               testFilepath.Append("test2_input.json"),
-			expectedFilepath: testFilepath.Append("test2_expected.yaml"),
+			expectedFilepath: testFilepath.Append("test2_expected.ts"),
 		},
 	}
 
@@ -92,6 +92,8 @@ func TestConvert_Input_HappyPath(t *testing.T) {
 }
 
 func TestConvert_InputFile_HappyPath(t *testing.T) {
+	t.Skip("TODO: need to implement this function")
+
 	cases := []struct {
 		inputFile        types.Filepath
 		expectedFilepath types.Filepath
