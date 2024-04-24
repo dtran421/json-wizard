@@ -2,32 +2,51 @@ package convert
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
 
-	"github.com/dtran421/json-wizard/strategy/convert"
+	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/strategy/converter"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/spf13/cobra"
 )
 
 // ConvertCmd represents the convert command
 type ConvertCmd struct {
-	Converter convert.ConverterFactory
+	ConverterFactory converter.ConverterFactoryInstance
+	IOFileValidator  iofile_validator.IOFileValidator
+
+	cmdName string
 
 	rawOutputFormat string
 
-	input json.RawMessage
+	input     json.RawMessage
+	inputFile types.Filepath
 
 	outputFormat types.OutputFormat
-	inputFile    types.Filepath
 	outputFile   types.Filepath
 
 	indentSize int
 }
 
+func New(ioFileValidator iofile_validator.IOFileValidator) *ConvertCmd {
+	return &ConvertCmd{
+		ConverterFactory: *converter.ConverterFactory(),
+		IOFileValidator:  ioFileValidator,
+
+		cmdName: "convert",
+	}
+}
+
+func (cmdStruct ConvertCmd) CmdName() string {
+	return cmdStruct.cmdName
+}
+
 func (cmdStruct *ConvertCmd) SetRawOutputFormat(rawOutputFormat string) {
 	cmdStruct.rawOutputFormat = rawOutputFormat
+}
+
+func (cmdStruct ConvertCmd) Input() json.RawMessage {
+	return cmdStruct.input
 }
 
 func (cmdStruct *ConvertCmd) SetInput(input json.RawMessage) {
@@ -42,12 +61,24 @@ func (cmdStruct *ConvertCmd) SetOutputFormat(outputFormat types.OutputFormat) {
 	cmdStruct.outputFormat = outputFormat
 }
 
+func (cmdStruct ConvertCmd) InputFile() types.Filepath {
+	return cmdStruct.inputFile
+}
+
 func (cmdStruct *ConvertCmd) SetInputFile(inputFile string) {
 	cmdStruct.inputFile = types.NewFilepath(inputFile)
 }
 
+func (cmdStruct ConvertCmd) OutputFile() types.Filepath {
+	return cmdStruct.outputFile
+}
+
 func (cmdStruct *ConvertCmd) SetOutputFile(outputFile string) {
 	cmdStruct.outputFile = types.NewFilepath(outputFile)
+}
+
+func (cmdStruct ConvertCmd) IndentSize() int {
+	return cmdStruct.indentSize
 }
 
 func (cmdStruct *ConvertCmd) SetIndentSize(indentSize int) {
@@ -80,11 +111,11 @@ func (cmdStruct ConvertCmd) ValidateFlags() error {
 		return err
 	}
 
-	if err := cmdStruct.ValidateInputFile(); err != nil {
+	if err := cmdStruct.IOFileValidator.ValidateInputFile(&cmdStruct); err != nil {
 		return err
 	}
 
-	if err := cmdStruct.ValidateOutputFile(); err != nil {
+	if err := cmdStruct.IOFileValidator.ValidateOutputFile(&cmdStruct); err != nil {
 		return err
 	}
 
@@ -105,41 +136,6 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 	}
 }
 
-func (cmdStruct ConvertCmd) ValidateInputFile() error {
-	if cmdStruct.inputFile.IsEmpty() || cmdStruct.inputFile.IsAtHomeDir() {
-		return nil
-	}
-
-	if cmdStruct.input != nil {
-		fmt.Println("ignoring input file as JSON input is provided")
-		return nil
-	}
-
-	if _, err := os.Stat(cmdStruct.inputFile.String()); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("input file does not exist: %s", cmdStruct.inputFile)
-	}
-
-	if extension := cmdStruct.inputFile.Extension(); extension != ".json" {
-		return fmt.Errorf("input file must be a JSON file")
-	}
-
-	return nil
-}
-
-func (cmdStruct *ConvertCmd) ValidateOutputFile() error {
-	if types.NewFilepathFromAbsPath(cmdStruct.outputFile.Base()).IsEmpty() {
-		cmdStruct.outputFile = types.NewFilepath("output").WithExtension(cmdStruct.outputFormat)
-		return nil
-	}
-
-	var outputFormatExtension = cmdStruct.outputFormat.GetExtension()
-	if extension := cmdStruct.outputFile.Extension(); extension != string(outputFormatExtension) {
-		return fmt.Errorf("output file must have the extension %s, got %s", outputFormatExtension, extension)
-	}
-
-	return nil
-}
-
 func (cmdStruct ConvertCmd) ValidateIndentSize() error {
 	if cmdStruct.indentSize < 0 {
 		return fmt.Errorf("indent size must be a positive integer")
@@ -148,10 +144,10 @@ func (cmdStruct ConvertCmd) ValidateIndentSize() error {
 	return nil
 }
 
-func (cmdStruct ConvertCmd) ConvertJSON() error {
+func (cmdStruct ConvertCmd) Execute() error {
 	fmt.Printf("Converting %s to %s\n", cmdStruct.input, cmdStruct.outputFormat)
 
-	convertStrategy, err := cmdStruct.Converter.BuildConverter(cmdStruct.outputFormat)
+	convertStrategy, err := cmdStruct.ConverterFactory.BuildConverter(cmdStruct.outputFormat)
 	if err != nil {
 		return err
 	}

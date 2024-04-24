@@ -25,6 +25,8 @@ type Extension string
 
 func (f OutputFormat) GetExtension() Extension {
 	switch f {
+	case JSON:
+		return ".json"
 	case YAML:
 		return ".yaml"
 	case TS:
@@ -34,7 +36,7 @@ func (f OutputFormat) GetExtension() Extension {
 	case RS:
 		return ".rs"
 	default:
-		return ""
+		panic(fmt.Errorf("invalid output format: %s", f))
 	}
 }
 
@@ -125,6 +127,10 @@ func (f Filepath) Extension() string {
 
 func (f Filepath) HasPrefix(prefix Filepath) bool {
 	return strings.HasPrefix(f.String(), prefix.String())
+}
+
+func (f Filepath) HasExtension(outputFormat OutputFormat) bool {
+	return strings.HasSuffix(f.String(), string(outputFormat.GetExtension()))
 }
 
 func (f Filepath) IsAtHomeDir() bool {

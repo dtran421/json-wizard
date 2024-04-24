@@ -1,12 +1,31 @@
 package types
 
-import "github.com/spf13/cobra"
+import (
+	"encoding/json"
+
+	"github.com/spf13/cobra"
+)
+
+type IOFileValidator interface {
+	ValidateInputFile(Cmd) error
+	ValidateOutputFile(Cmd) error
+}
 
 type Cmd interface {
+	CmdName() string
+
+	Input() json.RawMessage
+	InputFile() Filepath
+	OutputFile() Filepath
+	OutputFormat() OutputFormat
+	IndentSize() int
+
+	SetOutputFile(string)
+
 	/*
 	 * Validate the arguments passed to the command.
 	 */
-	ValidateFn(cmd *cobra.Command, args []string) error
+	ValidateFn(*cobra.Command, []string) error
 
 	/*
 	 * Validate the flags passed to the command.
@@ -14,12 +33,7 @@ type Cmd interface {
 	ValidateFlags() error
 
 	/*
-	 * Validate the output format flag.
-	 */
-	ValidateOutputFormat() error
-
-	/*
-	 * Convert JSON to the specified output format.
+	 * Execute the command.
 	 */
 	Execute() error
 }

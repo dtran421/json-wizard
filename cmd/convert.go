@@ -1,21 +1,14 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/dtran421/json-wizard/providers/convert"
-	convertStrategy "github.com/dtran421/json-wizard/strategy/convert"
+	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/utils"
 	"github.com/spf13/cobra"
 )
 
-var cmdStruct = convert.ConvertCmd{
-	Converter: *convertStrategy.NewConverterFactory(),
-}
+var convertCmdStruct = convert.New(iofile_validator.IOFileValidator{})
 
-// convertCmd represents the convert command
 var convertCmd = &cobra.Command{
 	Use:   "convert",
 	Short: "Convert JSON to other formats.",
@@ -28,15 +21,9 @@ var convertCmd = &cobra.Command{
 	- Rust struct
 	`,
 
-	Args: cmdStruct.ValidateFn,
+	Args: convertCmdStruct.ValidateFn,
 
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("convert called")
-		if err := cmdStruct.ConvertJSON(); err != nil {
-			return err
-		}
-		return nil
-	},
+	RunE: utils.CmdRunE(convertCmdStruct),
 }
 
 func init() {
@@ -60,20 +47,20 @@ func init() {
 		"output format (required, one of: yaml, ts, go, rs)")
 	rootCmd.MarkFlagRequired("output")
 
-	cmdStruct.SetRawOutputFormat(rawOutputFormat)
+	convertCmdStruct.SetRawOutputFormat(rawOutputFormat)
 
 	convertCmd.Flags().StringVarP(&inputFile, "inputFile", "in", "",
 		"input file to convert (will ignore if input is provided)")
 
-	cmdStruct.SetInputFile(inputFile)
+	convertCmdStruct.SetInputFile(inputFile)
 
 	convertCmd.Flags().StringVarP(&outputFile, "outputFile", "o", "",
 		"output file path to write the converted JSON")
 
-	cmdStruct.SetOutputFile(outputFile)
+	convertCmdStruct.SetOutputFile(outputFile)
 
 	convertCmd.Flags().IntVarP(&indentSize, "indent", "i", 2,
 		"indent size for the output file")
 
-	cmdStruct.SetIndentSize(indentSize)
+	convertCmdStruct.SetIndentSize(indentSize)
 }

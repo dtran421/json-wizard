@@ -16,7 +16,7 @@ func TestHomeDirpath(t *testing.T) {
 	}
 }
 
-func TestGetExtension(t *testing.T) {
+func TestGetExtension_HappyPath(t *testing.T) {
 	cases := []struct {
 		in       types.OutputFormat
 		expected string
@@ -37,10 +37,6 @@ func TestGetExtension(t *testing.T) {
 			in:       types.RS,
 			expected: ".rs",
 		},
-		{
-			in:       types.OutputFormat(""),
-			expected: "",
-		},
 	}
 
 	for _, c := range cases {
@@ -48,6 +44,29 @@ func TestGetExtension(t *testing.T) {
 		if got != types.Extension(c.expected) {
 			t.Errorf("GetExtension(%q) == %q, want %q", c.in, got, c.expected)
 		}
+	}
+}
+
+func TestGetExtension_Panic(t *testing.T) {
+	cases := []struct {
+		in types.OutputFormat
+	}{
+		{
+			in: "invalid",
+		},
+		{
+			in: "invalid2.txt",
+		},
+	}
+
+	for _, c := range cases {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("GetExtension() did not panic")
+			}
+		}()
+
+		types.OutputFormat(c.in).GetExtension()
 	}
 }
 
@@ -371,6 +390,42 @@ func TestHasPrefix(t *testing.T) {
 		got := c.in.HasPrefix(c.prefix)
 		if got != c.expected {
 			t.Errorf("HasPrefix(%q, %q) == %t, want %t", c.in, c.prefix, got, c.expected)
+		}
+	}
+}
+
+func TestHasExtension(t *testing.T) {
+	cases := []struct {
+		in        types.Filepath
+		extension types.OutputFormat
+		expected  bool
+	}{
+		{
+			in:        types.NewFilepath("test"),
+			extension: types.YAML,
+			expected:  false,
+		},
+		{
+			in:        types.NewFilepath("test2.json"),
+			extension: types.JSON,
+			expected:  true,
+		},
+		{
+			in:        types.NewFilepath("test/test3.ts"),
+			extension: types.TS,
+			expected:  true,
+		},
+		{
+			in:        types.NewFilepath("test4.txt"),
+			extension: types.TS,
+			expected:  false,
+		},
+	}
+
+	for _, c := range cases {
+		got := c.in.HasExtension(c.extension)
+		if got != c.expected {
+			t.Errorf("HasExtension(%q, %q) == %t, want %t", c.in, c.extension, got, c.expected)
 		}
 	}
 }

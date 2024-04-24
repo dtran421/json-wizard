@@ -5,18 +5,18 @@ import (
 	"os"
 	"testing"
 
-	convert "github.com/dtran421/json-wizard/strategy/convert/ts"
+	"github.com/dtran421/json-wizard/strategy/converter/ts"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
-var conv convert.TSConverter
+var conv ts.TSConverter
 
-var testFilepath types.Filepath = types.NewFilepath("/strategy/convert/ts/").WithPrefix(utils.TestPathname())
+var testFilepath types.Filepath = types.NewFilepath("/strategy/converter/ts/").WithPrefix(utils.TestPathname())
 var outputFilepath types.Filepath = types.NewFilepath("/output/ts/output.ts").WithPrefix(utils.TestPathname())
 
 func setupTest() {
-	conv = convert.TSConverter{}
+	conv = *ts.NewTSConverter()
 	conv.SetOutputFile(outputFilepath)
 	conv.SetIndentSize(2)
 }

@@ -3,13 +3,13 @@ module github.com/dtran421/json-wizard
 go 1.21.0
 
 require (
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect

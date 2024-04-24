@@ -8,7 +8,7 @@ import (
 	"github.com/dtran421/json-wizard/utils"
 )
 
-var outputFilepath types.Filepath = utils.Rootpath().Append("/output/yaml/output.yaml")
+var outputFilepath types.Filepath = utils.TestPathname().Append("/output/yaml/output.yaml")
 var inputFilepath types.Filepath = utils.TestPathname().Append("/input.json")
 
 var cmd convert.ConvertCmd
@@ -74,131 +74,6 @@ func TestValidateOutputFormat_Error(t *testing.T) {
 		if err := cmd.ValidateOutputFormat(); err == nil {
 			t.Errorf("ValidateOutputFormat(%q) == nil, want error", c.in)
 		}
-	}
-}
-
-func TestValidateInputFile_HappyPath(t *testing.T) {
-	setupTest()
-
-	cmd.SetInputFile(inputFilepath.String())
-
-	if err := cmd.ValidateInputFile(); err != nil {
-		t.Errorf("ValidateInputFile() == %v, want nil", err)
-	}
-}
-
-func TestValidateInputFile_Ignored(t *testing.T) {
-	cases := []struct {
-		inputFile types.Filepath
-		input     string
-	}{
-		{
-			inputFile: types.NewFilepath(""),
-			input:     "",
-		},
-		{
-			inputFile: inputFilepath,
-			input:     `{"key": "value"}`,
-		},
-		{
-			inputFile: types.NewFilepath(""),
-			input:     `{"key": "value"}`,
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetInputFile(c.inputFile.String())
-		cmd.SetInput([]byte(c.input))
-
-		if err := cmd.ValidateInputFile(); err != nil {
-			t.Errorf("ValidateInputFile() == %v, want nil", err)
-		}
-	}
-
-}
-
-func TestValidateInputFile_Error(t *testing.T) {
-	cases := []struct {
-		inputFile types.Filepath
-	}{
-		{
-			inputFile: types.NewFilepath("invalid.json"),
-		},
-		{
-			inputFile: types.NewFilepath("../test/invalid.json"),
-		},
-		{
-			inputFile: types.NewFilepath("../test/strategy/convert/invalid/input"),
-		},
-		{
-			inputFile: types.NewFilepath("../test/strategy/convert/invalid/input.txt"),
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetInputFile(c.inputFile.String())
-
-		if err := cmd.ValidateInputFile(); err == nil {
-			t.Errorf("ValidateInputFile() == nil, want error")
-		}
-	}
-}
-
-func TestValidateOutputFile_HappyPath(t *testing.T) {
-	cases := []struct {
-		outputFile types.Filepath
-	}{
-		{
-			outputFile: types.NewFilepath("output.yaml"),
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetOutputFile(c.outputFile.String())
-
-		if err := cmd.ValidateOutputFile(); err != nil {
-			t.Errorf("ValidateOutputFile() == %v, want nil", err)
-		}
-	}
-}
-
-func TestValidateOutputFile_Ignored(t *testing.T) {
-	setupTest()
-
-	cmd.SetOutputFile("")
-
-	if err := cmd.ValidateOutputFile(); err != nil {
-		t.Errorf("ValidateOutputFile() == %v, want nil", err)
-	}
-}
-
-func TestValidateOutputFile_Error(t *testing.T) {
-	cases := []struct {
-		outputFile types.Filepath
-	}{
-		{
-			outputFile: types.NewFilepath("output"),
-		},
-		{
-			outputFile: types.NewFilepath("output.txt"),
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetOutputFile(c.outputFile.String())
-
-		if err := cmd.ValidateOutputFile(); err == nil {
-			t.Errorf("ValidateOutputFile() == nil, want error")
-		}
-
 	}
 }
 
@@ -371,23 +246,23 @@ func TestValidateFn_Error(t *testing.T) {
 	}
 }
 
-func TestConvertJSON_toYAML_HappyPath(t *testing.T) {
+func TestExecute_toYAML_HappyPath(t *testing.T) {
 	setupTest()
 
 	cmd.SetInput([]byte(`{"key": "value"}`))
 
-	if err := cmd.ConvertJSON(); err != nil {
-		t.Errorf("ConvertJSON() == %v, want nil", err)
+	if err := cmd.Execute(); err != nil {
+		t.Errorf("Execute() == %v, want nil", err)
 	}
 }
 
-func TestConvertJSON_Error(t *testing.T) {
+func TestExecute_Error(t *testing.T) {
 	setupTest()
 
 	cmd.SetOutputFormat(types.OutputFormat("invalid"))
 	cmd.SetInput([]byte(`{"key": [}}`))
 
-	if err := cmd.ConvertJSON(); err == nil {
-		t.Errorf("ConvertJSON() == nil, want error")
+	if err := cmd.Execute(); err == nil {
+		t.Errorf("Execute() == nil, want error")
 	}
 }

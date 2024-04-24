@@ -5,18 +5,18 @@ import (
 	"os"
 	"testing"
 
-	convert "github.com/dtran421/json-wizard/strategy/convert/yaml"
+	"github.com/dtran421/json-wizard/strategy/converter/yaml"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
-var conv convert.YAMLConverter
+var conv yaml.YAMLConverter
 
-var testFilepath types.Filepath = types.NewFilepath("/strategy/convert/yaml/").WithPrefix(utils.TestPathname())
+var testFilepath types.Filepath = types.NewFilepath("/strategy/converter/yaml/").WithPrefix(utils.TestPathname())
 var outputFilepath types.Filepath = types.NewFilepath("/output/yaml/output.yaml").WithPrefix(utils.TestPathname())
 
 func setupTest() {
-	conv = convert.YAMLConverter{}
+	conv = *yaml.NewYAMLConverter()
 	conv.SetOutputFile(outputFilepath)
 	conv.SetIndentSize(2)
 }
@@ -30,7 +30,7 @@ func teardownTest(t *testing.T, in types.Filepath, openTestOutputFiles ...*os.Fi
 }
 
 func TestNewYAMLConverter(t *testing.T) {
-	var conv = convert.NewYAMLConverter()
+	var conv = yaml.NewYAMLConverter()
 
 	if conv == nil {
 		t.Errorf("NewYAMLConverter() == nil, want !nil")
