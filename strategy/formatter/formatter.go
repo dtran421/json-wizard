@@ -15,7 +15,13 @@ func NewFormatter() *Formatter {
 }
 
 func (f Formatter) Format(cmd types.Cmd) error {
-	fo, err := os.Create(cmd.OutputFile().String())
+	outputFilepath := cmd.OutputFile()
+
+	if err := os.MkdirAll(outputFilepath.Directory(), os.ModePerm); err != nil {
+		return err
+	}
+
+	fo, err := os.Create(outputFilepath.String())
 	if err != nil {
 		return err
 	}

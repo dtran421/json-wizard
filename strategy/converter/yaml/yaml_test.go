@@ -21,14 +21,6 @@ func setupTest() {
 	conv.SetIndentSize(2)
 }
 
-func teardownTest(t *testing.T, in types.Filepath, openTestOutputFiles ...*os.File) {
-	for _, openTestOutputFile := range openTestOutputFiles {
-		if err := openTestOutputFile.Close(); err != nil {
-			t.Errorf("Convert(%s): %s", in.String(), err)
-		}
-	}
-}
-
 func TestNewYAMLConverter(t *testing.T) {
 	var conv = yaml.NewYAMLConverter()
 
@@ -75,7 +67,7 @@ func TestConvert_Input_HappyPath(t *testing.T) {
 			t.Errorf("Convert(%q) == %q, want nil", c.in, err)
 		}
 
-		var expectedScanner, outputScanner = getOutputAndExpectedScanners(t, c.in, outputFilepath, c.expectedFilepath)
+		var expectedScanner, outputScanner = utils.OutputAndExpectedScanners(t, c.in.String(), outputFilepath, c.expectedFilepath)
 
 		for {
 			var expectedScan, outputScan = expectedScanner.Scan(), outputScanner.Scan()
@@ -125,7 +117,7 @@ func TestConvert_InputFile_HappyPath(t *testing.T) {
 			t.Errorf("Convert(%q) == %q, want nil", c.inputFile, err)
 		}
 
-		var expectedScanner, outputScanner = getOutputAndExpectedScanners(t, c.inputFile, outputFilepath, c.expectedFilepath)
+		var expectedScanner, outputScanner = utils.OutputAndExpectedScanners(t, c.inputFile.String(), outputFilepath, c.expectedFilepath)
 
 		for {
 			var expectedScan, outputScan = expectedScanner.Scan(), outputScanner.Scan()
@@ -147,25 +139,4 @@ func TestConvert_InputFile_HappyPath(t *testing.T) {
 			}
 		}
 	}
-}
-
-func getOutputAndExpectedScanners(
-	t *testing.T,
-	input types.Filepath,
-	outputFilepath types.Filepath,
-	expectedFilepath types.Filepath,
-) (*bufio.Scanner, *bufio.Scanner) {
-	var outputFile, outputErr = os.Open(outputFilepath.String())
-	if outputErr != nil {
-		t.Errorf("Convert(%q): %s", input, outputErr)
-	}
-	defer teardownTest(t, input, outputFile)
-
-	var expectedFile, expectedErr = os.Open(expectedFilepath.String())
-	if expectedErr != nil {
-		t.Errorf("Convert(%q): %s", input, expectedErr)
-	}
-	defer expectedFile.Close()
-
-	return bufio.NewScanner(expectedFile), bufio.NewScanner(outputFile)
 }

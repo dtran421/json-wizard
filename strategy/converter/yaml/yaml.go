@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 
 	"github.com/dtran421/json-wizard/types"
@@ -41,7 +40,7 @@ func (c *YAMLConverter) SetIndentSize(indentSize int) {
 func (c *YAMLConverter) Convert() error {
 	outputFilepath := c.outputFile.WithExtension(types.YAML)
 
-	if err := os.MkdirAll(filepath.Dir(outputFilepath.String()), os.ModePerm); err != nil {
+	if err := os.MkdirAll(outputFilepath.Directory(), os.ModePerm); err != nil {
 		return err
 	}
 

@@ -31,3 +31,19 @@ func TestTestPathname(t *testing.T) {
 		t.Errorf("TestPathname() == %q, want %q", testpath, expected)
 	}
 }
+
+func TestOutputAndExpectedScanners(t *testing.T) {
+	input := `{"key": "value"}`
+	outputFilepath := utils.TestPathname().Append("/output/json/output.json")
+	expectedFilepath := utils.TestPathname().Append("/strategy/formatter/json/test1_expected.json")
+
+	expectedScanner, outputScanner := utils.OutputAndExpectedScanners(t, input, outputFilepath, expectedFilepath)
+
+	if expectedScanner == nil {
+		t.Errorf("OutputAndExpectedScanners() == %v, want !nil", expectedScanner)
+	}
+
+	if outputScanner == nil {
+		t.Errorf("OutputAndExpectedScanners() == %v, want !nil", outputScanner)
+	}
+}
