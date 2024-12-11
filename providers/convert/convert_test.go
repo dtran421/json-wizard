@@ -4,17 +4,19 @@ import (
 	"testing"
 
 	"github.com/dtran421/json-wizard/providers/convert"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
-var outputFilepath types.Filepath = utils.TestPathname().Append("/output/yaml/output.yaml")
 var inputFilepath types.Filepath = utils.TestPathname().Append("/input.json")
+var outputFilepath types.Filepath = utils.TestPathname().Append("/output/yaml/output.yaml")
 
 var cmd convert.ConvertCmd
 
 func setupTest() {
-	cmd = convert.ConvertCmd{}
+	validator := input_validator.InputValidator{}
+	cmd = *convert.New(validator)
 	cmd.SetOutputFormat(types.YAML)
 	cmd.SetOutputFile(outputFilepath.String())
 }
@@ -73,52 +75,6 @@ func TestValidateOutputFormat_Error(t *testing.T) {
 
 		if err := cmd.ValidateOutputFormat(); err == nil {
 			t.Errorf("ValidateOutputFormat(%q) == nil, want error", c.in)
-		}
-	}
-}
-
-func TestValidateIndentSize_HappyPath(t *testing.T) {
-	cases := []struct {
-		indentSize int
-	}{
-		{
-			indentSize: 0,
-		},
-		{
-			indentSize: 2,
-		},
-		{
-			indentSize: 4,
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetIndentSize(c.indentSize)
-
-		if err := cmd.ValidateIndentSize(); err != nil {
-			t.Errorf("ValidateIndentSize() == %v, want nil", err)
-		}
-	}
-}
-
-func TestValidateIndentSize_Error(t *testing.T) {
-	cases := []struct {
-		indentSize int
-	}{
-		{
-			indentSize: -1,
-		},
-	}
-
-	for _, c := range cases {
-		setupTest()
-
-		cmd.SetIndentSize(c.indentSize)
-
-		if err := cmd.ValidateIndentSize(); err == nil {
-			t.Errorf("ValidateIndentSize() == nil, want error")
 		}
 	}
 }
@@ -259,7 +215,7 @@ func TestExecute_toYAML_HappyPath(t *testing.T) {
 func TestExecute_Error(t *testing.T) {
 	setupTest()
 
-	cmd.SetOutputFormat(types.OutputFormat("invalid"))
+	cmd.SetOutputFormat(types.JSON)
 	cmd.SetInput([]byte(`{"key": [}}`))
 
 	if err := cmd.Execute(); err == nil {

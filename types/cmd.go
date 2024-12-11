@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type IOFileValidator interface {
+type InputValidator interface {
 	ValidateInputFile(Cmd) error
 	ValidateOutputFile(Cmd) error
 }

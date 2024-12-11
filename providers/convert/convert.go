@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	"github.com/dtran421/json-wizard/strategy/converter"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/spf13/cobra"
@@ -13,7 +13,7 @@ import (
 // ConvertCmd represents the convert command
 type ConvertCmd struct {
 	ConverterFactory converter.ConverterFactoryInstance
-	IOFileValidator  iofile_validator.IOFileValidator
+	InputValidator   input_validator.InputValidator
 
 	cmdName string
 
@@ -28,10 +28,10 @@ type ConvertCmd struct {
 	indentSize int
 }
 
-func New(ioFileValidator iofile_validator.IOFileValidator) *ConvertCmd {
+func New(ioFileValidator input_validator.InputValidator) *ConvertCmd {
 	return &ConvertCmd{
 		ConverterFactory: *converter.ConverterFactory(),
-		IOFileValidator:  ioFileValidator,
+		InputValidator:   ioFileValidator,
 
 		cmdName: "convert",
 	}
@@ -111,11 +111,11 @@ func (cmdStruct ConvertCmd) ValidateFlags() error {
 		return err
 	}
 
-	if err := cmdStruct.IOFileValidator.ValidateInputFile(&cmdStruct); err != nil {
+	if err := cmdStruct.InputValidator.ValidateInputFile(&cmdStruct); err != nil {
 		return err
 	}
 
-	if err := cmdStruct.IOFileValidator.ValidateOutputFile(&cmdStruct); err != nil {
+	if err := cmdStruct.InputValidator.ValidateOutputFile(&cmdStruct); err != nil {
 		return err
 	}
 
@@ -134,14 +134,6 @@ func (cmdStruct *ConvertCmd) ValidateOutputFormat() error {
 	default:
 		return fmt.Errorf("invalid output format specified: %s", cmdStruct.rawOutputFormat)
 	}
-}
-
-func (cmdStruct ConvertCmd) ValidateIndentSize() error {
-	if cmdStruct.indentSize < 0 {
-		return fmt.Errorf("indent size must be a positive integer")
-	}
-
-	return nil
 }
 
 func (cmdStruct ConvertCmd) Execute() error {

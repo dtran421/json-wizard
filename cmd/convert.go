@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"github.com/dtran421/json-wizard/providers/convert"
-	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	"github.com/dtran421/json-wizard/utils"
 	"github.com/spf13/cobra"
 )
 
-var convertCmdStruct = convert.New(iofile_validator.IOFileValidator{})
+var convertCmdStruct = convert.New(input_validator.InputValidator{})
 
 var convertCmd = &cobra.Command{
 	Use:   "convert",

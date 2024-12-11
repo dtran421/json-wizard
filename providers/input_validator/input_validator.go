@@ -1,4 +1,4 @@
-package iofile_validator
+package input_validator
 
 import (
 	"errors"
@@ -8,9 +8,9 @@ import (
 	"github.com/dtran421/json-wizard/types"
 )
 
-type IOFileValidator struct{}
+type InputValidator struct{}
 
-func (v IOFileValidator) ValidateInputFile(cmd types.Cmd) error {
+func (iv InputValidator) ValidateInputFile(cmd types.Cmd) error {
 	inputFile := cmd.InputFile()
 
 	if inputFile.IsEmpty() || inputFile.IsAtHomeDir() {
@@ -33,7 +33,7 @@ func (v IOFileValidator) ValidateInputFile(cmd types.Cmd) error {
 	return nil
 }
 
-func (v IOFileValidator) ValidateOutputFile(cmd types.Cmd) error {
+func (iv InputValidator) ValidateOutputFile(cmd types.Cmd) error {
 	outputFile := cmd.OutputFile()
 	outputFormat := cmd.OutputFormat()
 
@@ -45,6 +45,16 @@ func (v IOFileValidator) ValidateOutputFile(cmd types.Cmd) error {
 	if !outputFile.HasExtension(outputFormat) {
 		return fmt.Errorf("output file must have the extension %s, got %s",
 			outputFormat.GetExtension(), outputFile.Extension())
+	}
+
+	return nil
+}
+
+func (v InputValidator) ValidateIndentSize(cmd types.Cmd) error {
+	indentSize := cmd.IndentSize()
+
+	if indentSize < 0 {
+		return fmt.Errorf("indent size must be a non-negative integer, got %d", indentSize)
 	}
 
 	return nil

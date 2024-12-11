@@ -1,21 +1,21 @@
-package iofile_validator_test
+package input_validator_test
 
 import (
 	"testing"
 
 	"github.com/dtran421/json-wizard/providers/convert"
-	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
 )
 
 var inputFilepath types.Filepath = utils.TestPathname().Append("/input.json")
 
-var validator iofile_validator.IOFileValidator
+var validator input_validator.InputValidator
 var cmd convert.ConvertCmd
 
 func setupTest() {
-	validator = iofile_validator.IOFileValidator{}
+	validator = input_validator.InputValidator{}
 	cmd = *convert.New(validator)
 	cmd.SetOutputFormat(types.JSON)
 }
@@ -139,5 +139,51 @@ func TestValidateOutputFile_Error(t *testing.T) {
 			t.Errorf("ValidateOutputFile() == nil, want error")
 		}
 
+	}
+}
+
+func TestValidateIndentSize_HappyPath(t *testing.T) {
+	cases := []struct {
+		indentSize int
+	}{
+		{
+			indentSize: 0,
+		},
+		{
+			indentSize: 2,
+		},
+		{
+			indentSize: 4,
+		},
+	}
+
+	for _, c := range cases {
+		setupTest()
+
+		cmd.SetIndentSize(c.indentSize)
+
+		if err := validator.ValidateIndentSize(&cmd); err != nil {
+			t.Errorf("ValidateIndentSize() == %v, want nil", err)
+		}
+	}
+}
+
+func TestValidateIndentSize_Error(t *testing.T) {
+	cases := []struct {
+		indentSize int
+	}{
+		{
+			indentSize: -1,
+		},
+	}
+
+	for _, c := range cases {
+		setupTest()
+
+		cmd.SetIndentSize(c.indentSize)
+
+		if err := validator.ValidateIndentSize(&cmd); err == nil {
+			t.Errorf("ValidateIndentSize() == nil, want error")
+		}
 	}
 }

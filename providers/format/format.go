@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	"github.com/dtran421/json-wizard/strategy/formatter"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/spf13/cobra"
 )
 
 type FormatCmd struct {
-	IOFileValidator iofile_validator.IOFileValidator
-	Formatter       formatter.Formatter
+	InputValidator input_validator.InputValidator
+	Formatter      formatter.Formatter
 
 	cmdName string
 
@@ -25,10 +25,10 @@ type FormatCmd struct {
 	indentSize int
 }
 
-func New(ioFileValidator iofile_validator.IOFileValidator) *FormatCmd {
+func New(ioFileValidator input_validator.InputValidator) *FormatCmd {
 	return &FormatCmd{
-		IOFileValidator: ioFileValidator,
-		Formatter:       *formatter.NewFormatter(),
+		InputValidator: ioFileValidator,
+		Formatter:      *formatter.NewFormatter(),
 
 		cmdName: "format",
 
@@ -82,7 +82,7 @@ func (cmdStruct FormatCmd) ValidateFn(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
-		if cmdStruct.inputFile.IsEmpty() {
+		if types.NewFilepathFromAbsPath(cmdStruct.inputFile.Base()).IsEmpty() {
 			return err
 		}
 
@@ -98,11 +98,11 @@ func (cmdStruct FormatCmd) ValidateFn(cmd *cobra.Command, args []string) error {
 }
 
 func (cmdStruct FormatCmd) ValidateFlags() error {
-	if err := cmdStruct.IOFileValidator.ValidateInputFile(&cmdStruct); err != nil {
+	if err := cmdStruct.InputValidator.ValidateInputFile(&cmdStruct); err != nil {
 		return err
 	}
 
-	if err := cmdStruct.IOFileValidator.ValidateOutputFile(&cmdStruct); err != nil {
+	if err := cmdStruct.InputValidator.ValidateOutputFile(&cmdStruct); err != nil {
 		return err
 	}
 

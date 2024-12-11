@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/dtran421/json-wizard/providers/format"
-	"github.com/dtran421/json-wizard/providers/iofile_validator"
+	"github.com/dtran421/json-wizard/providers/input_validator"
 	formatStrategy "github.com/dtran421/json-wizard/strategy/formatter"
 	"github.com/dtran421/json-wizard/types"
 	"github.com/dtran421/json-wizard/utils"
@@ -16,7 +16,7 @@ var formatCmd format.FormatCmd
 var formatter formatStrategy.Formatter
 
 func setupTest() {
-	ioFileValidator := iofile_validator.IOFileValidator{}
+	ioFileValidator := input_validator.InputValidator{}
 	formatCmd = *format.New(ioFileValidator)
 
 	formatter = *formatStrategy.NewFormatter()

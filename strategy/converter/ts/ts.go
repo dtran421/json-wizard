@@ -7,6 +7,7 @@ import (
 
 	"github.com/dtran421/json-wizard/providers"
 	"github.com/dtran421/json-wizard/types"
+	"github.com/dtran421/json-wizard/utils"
 )
 
 type TSConverter struct {
@@ -52,9 +53,13 @@ func (c *TSConverter) Convert() error {
 		return err
 	}
 
-	if err := fo.Close(); err != nil {
-		return err
-	}
+	defer func() error {
+		if err := fo.Close(); err != nil {
+			return err
+		}
+
+		return nil
+	}()
 
 	c.quicktypeWrapper.SetOutFile(outputFilepath)
 
@@ -62,6 +67,19 @@ func (c *TSConverter) Convert() error {
 	if err := json.Unmarshal(c.input, &output); err != nil {
 		return err
 	}
+
+	ft, err := utils.CreateTempFile()
+	if err != nil {
+		return err
+	}
+
+	defer utils.RemoveTempFile(ft)
+
+	if _, err := ft.Write(c.input); err != nil {
+		return err
+	}
+
+	c.quicktypeWrapper.SetInputFile(ft)
 
 	// c.quicktypeWrapper
 
